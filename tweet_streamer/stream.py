@@ -49,15 +49,15 @@ class TweetStreamer:
     """
     STREAM_URL = "https://stream.twitter.com/1.1/statuses/filter.json"
 
-    def __init__(self, auth: OAuth1, filter: str, time_limit: int, tweet_limit: int, callback: Optional[callable] = None):
+    def __init__(self, filter: str, time_limit: int, tweet_limit: int, callback: Optional[callable] = None, auth: Optional[OAuth1] = None):
         """Initiates the TweetStreamer class.
 
         Args:
-            auth (OAuth1): OAuth1 object for authentication.
             filter (str): The filter to be applied to the stream.
             time_limit (int): The time limit in seconds.
             tweet_limit (int): The tweet limit in number of tweets.
             callback (callable): The callback function to be called when a tweet is consumed
+            auth (OAuth1): OAuth1 object for authentication. You have to set it later, if you are not setting it in the constructor.
         """
 
         self.auth = auth
@@ -72,6 +72,11 @@ class TweetStreamer:
         self.callback = callback
         self.signal_queue = queue.Queue()
         self.counter = AtomicInteger(0)
+
+    def set_auth(self, auth: OAuth1) -> "TweetStreamer":
+        """Sets the authentication object."""
+        self.auth = auth
+        return self
 
     def _generate_filtered_url(self):
         return self.STREAM_URL + "?" + self.filter
@@ -137,7 +142,8 @@ class TweetStreamer:
                 break
 
     def _check_conditions(self, pbar: tqdm) -> bool:
-        """Checks time and queue size conditions
+        """Checks time and queue size conditions.
+        Also updates the progress bar.
 
         Returns:
             bool: If the conditions are met, returns True. Otherwise, False.

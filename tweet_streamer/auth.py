@@ -1,3 +1,4 @@
+from typing import Tuple
 from requests_oauthlib import OAuth1, OAuth1Session
 import webbrowser
 
@@ -6,6 +7,13 @@ class OAuthDancer:
     AUTH_BASE_URL = 'https://api.twitter.com/oauth/'
 
     def __init__(self, client_key, client_secret):
+        """
+        Responsible for authanticating with Twitter
+
+        Args:
+            client_key ([type]): Twitter API key
+            client_secret ([type]): Twitter API secret
+        """
         self.client_key = client_key
         self.client_secret = client_secret
         self.access_token = None
@@ -14,10 +22,10 @@ class OAuthDancer:
         self.oauth = OAuth1Session(client_key,
                                    client_secret=client_secret)
 
-    def _get_oauth_url(self, endpoint):
+    def _get_oauth_url(self, endpoint:str) -> str:
         return self.AUTH_BASE_URL + endpoint
 
-    def apply_auth(self):
+    def apply_auth(self) -> OAuth1:
         return OAuth1(self.client_key,
                       client_secret=self.client_secret,
                       resource_owner_key=self.access_token,
@@ -27,17 +35,13 @@ class OAuthDancer:
         url = self._get_oauth_url('request_token')
         return self.oauth.fetch_request_token(url)
 
-    def set_access_token(self, key, secret):
-        self.access_token = key
-        self.access_token_secret = secret
-
-    def get_authorization_url(self):
+    def get_authorization_url(self) -> str:
         """Get the authorization URL to redirect the user"""
         url = self._get_oauth_url('authorize')
         self.request_token = self._get_request_token()
         return self.oauth.authorization_url(url)
 
-    def get_access_token(self, verifier):
+    def get_access_token(self, verifier) -> Tuple[str, str]:
         """
         After user has authorized the request token, get access token
         with user supplied verifier.
@@ -56,7 +60,7 @@ class OAuthDancer:
 
     def dance(self):
         """
-        Get the access token, save it, and return it
+            Get the access token, save it, and return it
         """
         auth_url = self.get_authorization_url()
         browser_opened = webbrowser.open(auth_url)

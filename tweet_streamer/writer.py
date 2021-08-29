@@ -8,6 +8,13 @@ class TweetWriter:
         self.delimiter = delimiter
 
     def write_from_queue(self, tweet_queue:PriorityQueue):
+        """
+            Reads from the queue and writes to the file.
+
+            Args:
+                tweet_queue (PriorityQueue): The queue to read from. Tweets are
+                    read from the queue in the priority order.
+        """
         with open(self.file_path, 'w') as csvfile:
             fieldnames = list(TweetRow.__annotations__.keys())
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter="\t")
