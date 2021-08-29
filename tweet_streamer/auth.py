@@ -1,6 +1,29 @@
 from typing import Tuple
+import requests
 from requests_oauthlib import OAuth1, OAuth1Session
 import webbrowser
+
+class _AuthData:
+    auth_file_path = ".authfile"
+
+    @classmethod
+    def get(cls) -> Tuple[str, str]:
+        try:
+            auth_file = open(cls.auth_file_path, "r")
+            auth_data = auth_file.read().split("\n")
+            acces_token = auth_data[0]
+            acces_token_secret = auth_data[1]
+            return (acces_token, acces_token_secret)
+        except FileNotFoundError:
+            return None, None
+
+    @classmethod
+    def set(cls, acces_token: str, acces_token_secret: str):
+        try:
+            auth_file = open(cls.auth_file_path, "w")
+            auth_file.write(acces_token + "\n" + acces_token_secret)
+        except FileNotFoundError:
+            return None
 
 class OAuthDancer:
     """OAuth authentication handler"""
@@ -57,11 +80,26 @@ class OAuthDancer:
         self.access_token = resp['oauth_token']
         self.access_token_secret = resp['oauth_token_secret']
         return self.access_token, self.access_token_secret
+    
+    def _load_existing_token(self):
+        self.access_token, self.access_token_secret = _AuthData.get()
+        return self.access_token is not None and self.access_token_secret is not None
+
+    def _save_token(self):
+        _AuthData.set(self.access_token, self.access_token_secret)
+
+    def check_auth(self, auth_object: OAuth1):
+        r = requests.request("GET", self._get_oauth_url('account/verify_credentials.json'), auth=auth_object)
+        return r.status_code == 200
 
     def dance(self):
         """
             Get the access token, save it, and return it
         """
+        if self._load_existing_token():
+            auth_object = self.apply_auth()
+            if self.check_auth(auth_object):
+                return auth_object
         auth_url = self.get_authorization_url()
         browser_opened = webbrowser.open(auth_url)
         if not browser_opened:
@@ -69,4 +107,5 @@ class OAuthDancer:
             print(auth_url)
         twitter_pin = input('Paste the PIN here: ')
         self.get_access_token(twitter_pin)
+        self._save_token()
         return self.apply_auth()
