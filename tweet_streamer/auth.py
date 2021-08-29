@@ -89,7 +89,7 @@ class OAuthDancer:
         _AuthData.set(self.access_token, self.access_token_secret)
 
     def check_auth(self, auth_object: OAuth1):
-        r = requests.request("GET", self._get_oauth_url('account/verify_credentials.json'), auth=auth_object)
+        r = requests.request("GET", "https://api.twitter.com/1.1/account/verify_credentials.json", auth=auth_object)
         return r.status_code == 200
 
     def dance(self):
