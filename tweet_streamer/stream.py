@@ -3,7 +3,35 @@ from requests_oauthlib import OAuth1
 import threading, queue, requests
 import json
 from datetime import datetime, timedelta
+from tqdm import tqdm
 
+class AtomicInteger():
+    """
+        AtomicInteger is a wrapper for an integer that ensures that
+        the value is always incremented atomically.
+    """
+    def __init__(self, value=0):
+        self._value = int(value)
+        self._lock = threading.Lock()
+        
+    def inc(self, d=1):
+        with self._lock:
+            self._value += int(d)
+            return self._value
+
+    def dec(self, d=1):
+        return self.inc(-d)    
+
+    @property
+    def value(self):
+        with self._lock:
+            return self._value
+
+    @value.setter
+    def value(self, v):
+        with self._lock:
+            self._value = int(v)
+            return self._value
 
 class TweetStreamer:
     """
@@ -36,12 +64,14 @@ class TweetStreamer:
         self.filter = filter
         self.time_limit = time_limit
         self.tweet_limit = tweet_limit
-        self.queue = queue.Queue()
+        self.data_queue = queue.Queue()
         self.stream_stopped = False
         self.start_time = None
         self.stop_condition_checker_thread:threading.Thread = None
         self.stream_thread:threading.Thread = None
         self.callback = callback
+        self.signal_queue = queue.Queue()
+        self.counter = AtomicInteger(0)
 
     def _generate_filtered_url(self):
         return self.STREAM_URL + "?" + self.filter
@@ -83,9 +113,11 @@ class TweetStreamer:
                 tweet_raw = next(stream_iterator)
                 tweet = json.loads(tweet_raw)
                 if "limit" in tweet.keys():
+                    print(tweet)
                     continue
                 if self.callback: self.callback(tweet)
-                self.queue.put(tweet)
+                self.data_queue.put(tweet)
+                self.counter.inc()
                 """
                     AttributeError is raised when the stream is closed
                     and the iterator is exhausted.
@@ -95,13 +127,16 @@ class TweetStreamer:
                 break
 
     def _stop_on_conditions(self):
+        pbar = tqdm(total=100, miniters=0.5)
+        pbar.set_description(f"time limit={self.time_limit}, size limit={self.tweet_limit}")
         while True:
-            if self._check_conditions():
+            if self._check_conditions(pbar):
+                self.signal_queue.put("stop")
                 self.stream_stopped = True
                 self.connection.close()
                 break
 
-    def _check_conditions(self) -> bool:
+    def _check_conditions(self, pbar: tqdm) -> bool:
         """Checks time and queue size conditions
 
         Returns:
@@ -110,9 +145,17 @@ class TweetStreamer:
         elapsed_time = datetime.today() - self.start_time
 
         time_condition = elapsed_time > timedelta(seconds=self.time_limit)
-        size_condition = self.queue.qsize() >= self.tweet_limit
+        size_condition = self.counter.value >= self.tweet_limit
+        self._render_progress_bar(pbar, elapsed_time, self.counter.value)
 
         return time_condition or size_condition
+    
+    def _render_progress_bar(self, pbar: tqdm, elapsed_time: timedelta, size: int) -> None:
+        time_limit_progress = elapsed_time / timedelta(seconds=self.time_limit)
+        size_limit_progress = size / self.tweet_limit
+        pbar.postfix = f"""time: {elapsed_time}, size: {size}"""
+        progress = min(100, (100 * max(time_limit_progress, size_limit_progress)))
+        pbar.update(progress - pbar.n)
     
     def wait_for_finish(self) -> "TweetStreamer":
         """

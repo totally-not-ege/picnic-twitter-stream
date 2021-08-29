@@ -59,7 +59,10 @@ class OAuthDancer:
         Get the access token, save it, and return it
         """
         auth_url = self.get_authorization_url()
-        webbrowser.open(auth_url)
+        browser_opened = webbrowser.open(auth_url)
+        if not browser_opened:
+            print('Please open the following URL in a browser:')
+            print(auth_url)
         twitter_pin = input('Paste the PIN here: ')
         self.get_access_token(twitter_pin)
         return self.apply_auth()
