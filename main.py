@@ -20,5 +20,12 @@ if __name__=="__main__":
     parser.add_argument("--csv-seperator", type=str, default="\t", help="CSV seperator")
     args = parser.parse_args()
 
-    StreamRunner(args).run()
-    
+    StreamRunner(
+        time_limit=args.time_limit,
+        tweet_limit=args.tweet_limit,
+        filter=args.filter,
+        output=args.output,
+        api_key=args.api_key,
+        api_secret_key=args.api_secret_key,
+        csv_seperator=args.csv_seperator
+    ).run()
