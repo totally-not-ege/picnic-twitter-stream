@@ -6,13 +6,13 @@ class OAuthDancer:
     """OAuth authentication handler"""
     AUTH_BASE_URL = 'https://api.twitter.com/oauth/'
 
-    def __init__(self, client_key, client_secret):
+    def __init__(self, client_key: str, client_secret: str):
         """
         Responsible for authanticating with Twitter
 
         Args:
-            client_key ([type]): Twitter API key
-            client_secret ([type]): Twitter API secret
+            client_key (str): Twitter API key
+            client_secret (str): Twitter API secret
         """
         self.client_key = client_key
         self.client_secret = client_secret

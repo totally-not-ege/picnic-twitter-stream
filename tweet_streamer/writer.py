@@ -7,7 +7,7 @@ class TweetWriter:
         self.file_path = file_path
         self.delimiter = delimiter
 
-    def write_from_queue(self, tweet_queue:PriorityQueue):
+    def write_from_queue(self, tweet_queue:PriorityQueue) -> None:
         """
             Reads from the queue and writes to the file.
 

@@ -35,31 +35,31 @@ class AtomicInteger():
 
 class TweetStreamer:
     """
-    TweetStreamer class creates a stream from Twitter API using HTTP request
-    and puts the tweets in a queue until the time limit or target queue size is reached.
+        TweetStreamer class creates a stream from Twitter API using HTTP request
+        and puts the tweets in a queue until the time limit or target queue size is reached.
 
-    It creates a thread to check the time and size conditions, and another thread to consume the stream.
-    Consumed tweets are put in the queue, and the thread checks the time and size conditions.
-    If the conditions are met, the stream is closed and the thread is stopped. 
-    The only problem with this approach is that it is not easy get the accurate size for the queue, 
-    so returned queue's size might be larger than the target size.
+        It creates a thread to check the time and size conditions, and another thread to consume the stream.
+        Consumed tweets are put in the queue, and the thread checks the time and size conditions.
+        If the conditions are met, the stream is closed and the thread is stopped. 
+        The only problem with this approach is that it is not easy get the accurate size for the queue, 
+        so returned queue's size might be larger than the target size.
 
-    Raises:
-        RuntimeError: If the stream cannot be opened.
+        Raises:
+            RuntimeError: If the stream cannot be opened.
     """
     STREAM_URL = "https://stream.twitter.com/1.1/statuses/filter.json"
 
     def __init__(self, filter: str, time_limit: int, tweet_limit: int, callback: Optional[callable] = None, auth: Optional[OAuth1] = None):
-        """Initiates the TweetStreamer class.
-
-        Args:
-            filter (str): The filter to be applied to the stream.
-            time_limit (int): The time limit in seconds.
-            tweet_limit (int): The tweet limit in number of tweets.
-            callback (callable): The callback function to be called when a tweet is consumed
-            auth (OAuth1): OAuth1 object for authentication. You have to set it later, if you are not setting it in the constructor.
         """
+            Initiates the TweetStreamer class.
 
+            Args:
+                filter (str): The filter to be applied to the stream.
+                time_limit (int): The time limit in seconds.
+                tweet_limit (int): The tweet limit in number of tweets.
+                callback (callable): The callback function to be called when a tweet is consumed
+                auth (OAuth1): OAuth1 object for authentication. You have to set it later, if you are not setting it in the constructor.
+        """
         self.auth = auth
         self.filter = filter
         self.time_limit = time_limit
@@ -78,7 +78,7 @@ class TweetStreamer:
         self.auth = auth
         return self
 
-    def _generate_filtered_url(self):
+    def _generate_filtered_url(self) -> str:
         return self.STREAM_URL + "?" + self.filter
 
     def open_connection(self) -> "TweetStreamer":
@@ -109,7 +109,7 @@ class TweetStreamer:
         self.stream_thread.start()
         return self
 
-    def _consume_stream(self):
+    def _consume_stream(self) -> None:
         stream_iterator = self.connection.iter_lines(chunk_size=512)
         while True:
             if self.stream_stopped:
@@ -131,7 +131,7 @@ class TweetStreamer:
             except AttributeError:
                 break
 
-    def _stop_on_conditions(self):
+    def _stop_on_conditions(self) -> None:
         pbar = tqdm(total=100, miniters=0.5)
         pbar.set_description(f"time limit={self.time_limit}, size limit={self.tweet_limit}")
         while True:

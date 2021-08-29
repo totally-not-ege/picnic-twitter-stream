@@ -52,7 +52,7 @@ class StreamRunner:
         self.processor = TweetProcessor(data_queue=self.stream.data_queue, signal_queue=self.stream.signal_queue)
         self.writer = TweetWriter(output, csv_seperator)
     
-    def run(self):
+    def run(self) -> None:
         """
             This method will do the following:
             1. Authenticate with Twitter
