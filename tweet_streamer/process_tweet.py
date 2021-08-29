@@ -33,7 +33,6 @@ class TweetProcessor:
             except queue.Empty:
                 try:
                     if signal := self.signal_queue.get_nowait():
-                        print(signal)
                         if signal == "stop": break
                 except queue.Empty:
                     pass
